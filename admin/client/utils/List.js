@@ -347,5 +347,26 @@ List.prototype.reorderItems = function (item, oldSortOrder, newSortOrder, pageOp
 	});
 };
 
+List.prototype.callCustomAction = function (data, itemId, action, callback) {
+	const url = Keystone.adminPath + '/api/' + this.path + '/' + itemId + '/actions/' + action.slug;
+
+	xhr({
+		url: url,
+		method: 'POST',
+		headers: assign({ 'Content-Type': 'application/json'}, Keystone.csrf.header),
+		responseType: 'json',
+		body: JSON.stringify(data),
+	}, (err, resp, body) => {
+		if (err) return callback(err);
+		
+		// Pass the body as result or error, depending on the statusCode
+		if (resp.statusCode === 200) {
+			callback(null, body);
+		} else {
+			callback(body);
+		}
+	});
+};
+
 
 module.exports = List;
