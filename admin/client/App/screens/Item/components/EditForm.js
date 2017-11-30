@@ -14,7 +14,7 @@ import { Fields } from 'FieldTypes';
 import { fade } from '../../../../utils/color';
 import theme from '../../../../theme';
 
-import { Button, LoadingButton } from '../../../elemental';
+import { Button, LoadingButton, GlyphButton } from '../../../elemental';
 import AlertMessages from '../../../shared/AlertMessages';
 import ConfirmationDialog from './../../../shared/ConfirmationDialog';
 
@@ -22,8 +22,9 @@ import FormHeading from './FormHeading';
 import AltText from './AltText';
 import FooterBar from './FooterBar';
 import InvalidFieldType from '../../../shared/InvalidFieldType';
+import evalDependsOn from '../../../../../../fields/utils/evalDependsOn.js';
 
-import { deleteItem } from '../actions';
+import { deleteItem, loadItemData } from '../actions';
 
 import { upcase } from '../../../../utils/string';
 
@@ -57,6 +58,7 @@ var EditForm = React.createClass({
 		return {
 			values: assign({}, this.props.data.fields),
 			confirmationDialog: null,
+			actionsDisabled: false,
 			loading: false,
 			lastValues: null, // used for resetting
 			focusFirstField: !this.props.list.nameField && !this.props.list.nameFieldIsFormHeader,
@@ -67,6 +69,13 @@ var EditForm = React.createClass({
 	},
 	componentWillUnmount () {
 		this.__isMounted = false;
+	},
+	componentWillReceiveProps (nextProps) {
+		if (this.props.data.fields != nextProps.data.fields) {
+			this.setState({
+				values: assign({}, nextProps.data.fields)
+			});
+		}
 	},
 	getFieldProps (field) {
 		const props = assign({}, field);
@@ -116,6 +125,26 @@ var EditForm = React.createClass({
 	handleKeyFocus () {
 		const input = this.refs.keyOrIdInput;
 		input.select();
+	},
+	handleCustomAction (customAction) {
+		let { list, data } = this.props;
+		let { values } = this.state;
+		this.setState({ actionsDisabled: true });
+		list.callCustomAction(values, data.id, customAction, (actionErr, body) => {
+			if (actionErr) {
+				console.error(`Problem carrying out custom action ${customAction.name}: `, actionErr);
+				this.setState({
+					alerts: { error: actionErr },
+					actionsDisabled: false
+				});
+			} else {
+				this.setState({
+					alerts: { success: { success: body.message } },
+					actionsDisabled: false
+				});
+			}
+			this.props.dispatch(loadItemData());
+		});
 	},
 	removeConfirmationDialog () {
 		this.setState({
@@ -261,7 +290,7 @@ var EditForm = React.createClass({
 			return null;
 		}
 
-		const { loading } = this.state;
+		const { loading, actionsDisabled } = this.state;
 		const loadingButtonText = loading ? 'Saving' : 'Save';
 
 		// Padding must be applied inline so the FooterBar can determine its
@@ -273,7 +302,7 @@ var EditForm = React.createClass({
 					{!this.props.list.noedit && (
 						<LoadingButton
 							color="primary"
-							disabled={loading}
+							disabled={loading || actionsDisabled}
 							loading={loading}
 							onClick={this.updateItem}
 							data-button="update"
@@ -281,8 +310,24 @@ var EditForm = React.createClass({
 							{loadingButtonText}
 						</LoadingButton>
 					)}
+					{this.props.list.customActions.map(customAction => (
+						<GlyphButton
+							position={customAction.glyph ? customAction.glyphPosition || 'left' : 'none'}
+							glyph={customAction.glyph}
+							glyphColor={customAction.glyphColor}
+							glyphSize={customAction.glyphSize}
+							glyphStyle={customAction.glyphStyle}
+							onClick={this.handleCustomAction.bind(this, customAction)}
+							key={customAction.slug}
+							data-button={customAction.slug}
+							style={styles.actionButton}
+							disabled={loading || this.state.actionsDisabled || !evalDependsOn(customAction.dependsOn, this.state.values)}
+						>
+							<ResponsiveText hiddenXS={`${customAction.name}`} visibleXS={customAction.mobileText} />
+						</GlyphButton>
+					))}
 					{!this.props.list.noedit && (
-						<Button disabled={loading} onClick={this.toggleResetDialog} variant="link" color="cancel" data-button="reset">
+						<Button disabled={loading || actionsDisabled} onClick={this.toggleResetDialog} variant="link" color="cancel" data-button="reset">
 							<ResponsiveText
 								hiddenXS="reset changes"
 								visibleXS="reset"
@@ -290,7 +335,7 @@ var EditForm = React.createClass({
 						</Button>
 					)}
 					{!this.props.list.nodelete && (
-						<Button disabled={loading} onClick={this.toggleDeleteDialog} variant="link" color="delete" style={styles.deleteButton} data-button="delete">
+						<Button disabled={loading || actionsDisabled} onClick={this.toggleDeleteDialog} variant="link" color="delete" style={styles.deleteButton} data-button="delete">
 							<ResponsiveText
 								hiddenXS={`delete ${this.props.list.singular.toLowerCase()}`}
 								visibleXS="delete"
@@ -422,6 +467,9 @@ const styles = {
 	},
 	deleteButton: {
 		float: 'right',
+	},
+	actionButton: {
+		marginLeft: 10,
 	},
 };
 
