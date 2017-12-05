@@ -2,19 +2,19 @@ import React from 'react';
 import moment from 'moment';
 import assign from 'object-assign';
 import {
-	Col,
 	Form,
 	FormField,
 	FormInput,
+	Grid,
 	ResponsiveText,
-	Row,
-} from 'elemental';
+} from '../../../elemental';
+
 // import { css, StyleSheet } from 'aphrodite/no-important';
 import { Fields } from 'FieldTypes';
 import { fade } from '../../../../utils/color';
 import theme from '../../../../theme';
 
-import { Button, LoadingButton } from '../../../elemental';
+import { Button, LoadingButton, GlyphButton } from '../../../elemental';
 import AlertMessages from '../../../shared/AlertMessages';
 import ConfirmationDialog from './../../../shared/ConfirmationDialog';
 
@@ -22,8 +22,9 @@ import FormHeading from './FormHeading';
 import AltText from './AltText';
 import FooterBar from './FooterBar';
 import InvalidFieldType from '../../../shared/InvalidFieldType';
+import evalDependsOn from '../../../../../../fields/utils/evalDependsOn.js';
 
-import { deleteItem } from '../actions';
+import { deleteItem, loadItemData } from '../actions';
 
 import { upcase } from '../../../../utils/string';
 
@@ -57,9 +58,24 @@ var EditForm = React.createClass({
 		return {
 			values: assign({}, this.props.data.fields),
 			confirmationDialog: null,
+			actionsDisabled: false,
 			loading: false,
 			lastValues: null, // used for resetting
+			focusFirstField: !this.props.list.nameField && !this.props.list.nameFieldIsFormHeader,
 		};
+	},
+	componentDidMount () {
+		this.__isMounted = true;
+	},
+	componentWillUnmount () {
+		this.__isMounted = false;
+	},
+	componentWillReceiveProps (nextProps) {
+		if (this.props.data.fields != nextProps.data.fields) {
+			this.setState({
+				values: assign({}, nextProps.data.fields)
+			});
+		}
 	},
 	getFieldProps (field) {
 		const props = assign({}, field);
@@ -85,36 +101,22 @@ var EditForm = React.createClass({
 		values[event.path] = event.value;
 		this.setState({ values });
 	},
-	confirmReset (event) {
-		const confirmationDialog = (
-			<ConfirmationDialog
-				isOpen
-				body={`Reset your changes to <strong>${this.props.data.name}</strong>?`}
-				confirmationLabel="Reset"
-				onCancel={this.removeConfirmationDialog}
-				onConfirmation={this.handleReset}
-			/>
-		);
-		event.preventDefault();
-		this.setState({ confirmationDialog });
+
+	toggleDeleteDialog () {
+		this.setState({
+			deleteDialogIsOpen: !this.state.deleteDialogIsOpen,
+		});
+	},
+	toggleResetDialog () {
+		this.setState({
+			resetDialogIsOpen: !this.state.resetDialogIsOpen,
+		});
 	},
 	handleReset () {
 		this.setState({
 			values: assign({}, this.state.lastValues || this.props.data.fields),
-			confirmationDialog: null,
+			resetDialogIsOpen: false,
 		});
-	},
-	confirmDelete () {
-		const confirmationDialog = (
-			<ConfirmationDialog
-				isOpen
-				body={`Are you sure you want to delete <strong>${this.props.data.name}?</strong><br /><br />This cannot be undone.`}
-				confirmationLabel="Delete"
-				onCancel={this.removeConfirmationDialog}
-				onConfirmation={this.handleDelete}
-			/>
-		);
-		this.setState({ confirmationDialog });
 	},
 	handleDelete () {
 		const { data } = this.props;
@@ -123,6 +125,26 @@ var EditForm = React.createClass({
 	handleKeyFocus () {
 		const input = this.refs.keyOrIdInput;
 		input.select();
+	},
+	handleCustomAction (customAction) {
+		let { list, data } = this.props;
+		let { values } = this.state;
+		this.setState({ actionsDisabled: true });
+		list.callCustomAction(values, data.id, customAction, (actionErr, body) => {
+			if (actionErr) {
+				console.error(`Problem carrying out custom action ${customAction.name}: `, actionErr);
+				this.setState({
+					alerts: { error: actionErr },
+					actionsDisabled: false
+				});
+			} else {
+				this.setState({
+					alerts: { success: { success: body.message } },
+					actionsDisabled: false
+				});
+			}
+			this.props.dispatch(loadItemData());
+		});
 	},
 	removeConfirmationDialog () {
 		this.setState({
@@ -205,20 +227,21 @@ var EditForm = React.createClass({
 	},
 	renderNameField () {
 		var nameField = this.props.list.nameField;
-		var nameIsEditable = this.props.list.nameIsEditable;
+		var nameFieldIsFormHeader = this.props.list.nameFieldIsFormHeader;
 		var wrapNameField = field => (
 			<div className="EditForm__name-field">
 				{field}
 			</div>
 		);
-		if (nameIsEditable) {
+		if (nameFieldIsFormHeader) {
 			var nameFieldProps = this.getFieldProps(nameField);
 			nameFieldProps.label = null;
 			nameFieldProps.size = 'full';
+			nameFieldProps.autoFocus = true;
 			nameFieldProps.inputProps = {
 				className: 'item-name-field',
 				placeholder: nameField.label,
-				size: 'lg',
+				size: 'large',
 			};
 			return wrapNameField(
 				React.createElement(Fields[nameField.type], nameFieldProps)
@@ -232,7 +255,15 @@ var EditForm = React.createClass({
 	renderFormElements () {
 		var headings = 0;
 
-		return this.props.list.uiElements.map((el) => {
+		return this.props.list.uiElements.map((el, index) => {
+			// Don't render the name field if it is the header since it'll be rendered in BIG above
+			// the list. (see renderNameField method, this is the reverse check of the one it does)
+			if (
+				this.props.list.nameField
+				&& el.field === this.props.list.nameField.path
+				&& this.props.list.nameFieldIsFormHeader
+			) return;
+
 			if (el.type === 'heading') {
 				headings++;
 				el.options.values = this.state.values;
@@ -246,19 +277,20 @@ var EditForm = React.createClass({
 				if (typeof Fields[field.type] !== 'function') {
 					return React.createElement(InvalidFieldType, { type: field.type, path: field.path, key: field.path });
 				}
-				if (props.dependsOn) {
-					props.currentDependencies = {};
-					Object.keys(props.dependsOn).forEach(dep => {
-						props.currentDependencies[dep] = this.state.values[dep];
-					});
-				}
 				props.key = field.path;
+				if (index === 0 && this.state.focusFirstField) {
+					props.autoFocus = true;
+				}
 				return React.createElement(Fields[field.type], props);
 			}
 		}, this);
 	},
 	renderFooterBar () {
-		const { loading } = this.state;
+		if (this.props.list.noedit && this.props.list.nodelete) {
+			return null;
+		}
+
+		const { loading, actionsDisabled } = this.state;
 		const loadingButtonText = loading ? 'Saving' : 'Save';
 
 		// Padding must be applied inline so the FooterBar can determine its
@@ -267,22 +299,43 @@ var EditForm = React.createClass({
 		return (
 			<FooterBar style={styles.footerbar}>
 				<div style={styles.footerbarInner}>
-					<LoadingButton
-						color="primary"
-						disabled={loading}
-						loading={loading}
-						onClick={this.updateItem}
-					>
-						{loadingButtonText}
-					</LoadingButton>
-					<Button disabled={loading} onClick={this.confirmReset} variant="link" color="cancel">
-						<ResponsiveText
-							hiddenXS="reset changes"
-							visibleXS="reset"
-						/>
-					</Button>
+					{!this.props.list.noedit && (
+						<LoadingButton
+							color="primary"
+							disabled={loading || actionsDisabled}
+							loading={loading}
+							onClick={this.updateItem}
+							data-button="update"
+						>
+							{loadingButtonText}
+						</LoadingButton>
+					)}
+					{this.props.list.customActions.map(customAction => (
+						<GlyphButton
+							position={customAction.glyph ? customAction.glyphPosition || 'left' : 'none'}
+							glyph={customAction.glyph}
+							glyphColor={customAction.glyphColor}
+							glyphSize={customAction.glyphSize}
+							glyphStyle={customAction.glyphStyle}
+							onClick={this.handleCustomAction.bind(this, customAction)}
+							key={customAction.slug}
+							data-button={customAction.slug}
+							style={styles.actionButton}
+							disabled={loading || this.state.actionsDisabled || !evalDependsOn(customAction.dependsOn, this.state.values)}
+						>
+							<ResponsiveText hiddenXS={`${customAction.name}`} visibleXS={customAction.mobileText} />
+						</GlyphButton>
+					))}
+					{!this.props.list.noedit && (
+						<Button disabled={loading || actionsDisabled} onClick={this.toggleResetDialog} variant="link" color="cancel" data-button="reset">
+							<ResponsiveText
+								hiddenXS="reset changes"
+								visibleXS="reset"
+							/>
+						</Button>
+					)}
 					{!this.props.list.nodelete && (
-						<Button disabled={loading} onClick={this.confirmDelete} variant="link" color="delete" style={styles.deleteButton}>
+						<Button disabled={loading || actionsDisabled} onClick={this.toggleDeleteDialog} variant="link" color="delete" style={styles.deleteButton} data-button="delete">
 							<ResponsiveText
 								hiddenXS={`delete ${this.props.list.singular.toLowerCase()}`}
 								visibleXS="delete"
@@ -294,6 +347,11 @@ var EditForm = React.createClass({
 		);
 	},
 	renderTrackingMeta () {
+		// TODO: These fields are visible now, so we don't want this. We may revisit
+		// it when we have more granular control over hiding fields in certain
+		// contexts, so I'm leaving this code here as a reference for now - JW
+		if (true) return null; // if (true) prevents unreachable code linter errpr
+
 		if (!this.props.list.tracking) return null;
 
 		var elements = [];
@@ -360,19 +418,37 @@ var EditForm = React.createClass({
 		return (
 			<form ref="editForm" className="EditForm-container">
 				{(this.state.alerts) ? <AlertMessages alerts={this.state.alerts} /> : null}
-				<Row>
-					<Col lg="3/4">
-						<Form type="horizontal" className="EditForm" component="div">
+				<Grid.Row>
+					<Grid.Col large="three-quarters">
+						<Form layout="horizontal" component="div">
 							{this.renderNameField()}
 							{this.renderKeyOrId()}
 							{this.renderFormElements()}
 							{this.renderTrackingMeta()}
 						</Form>
-					</Col>
-					<Col lg="1/4"><span /></Col>
-				</Row>
+					</Grid.Col>
+					<Grid.Col large="one-quarter"><span /></Grid.Col>
+				</Grid.Row>
 				{this.renderFooterBar()}
-				{this.state.confirmationDialog}
+				<ConfirmationDialog
+					confirmationLabel="Reset"
+					isOpen={this.state.resetDialogIsOpen}
+					onCancel={this.toggleResetDialog}
+					onConfirmation={this.handleReset}
+				>
+					<p>Reset your changes to <strong>{this.props.data.name}</strong>?</p>
+				</ConfirmationDialog>
+				<ConfirmationDialog
+					confirmationLabel="Delete"
+					isOpen={this.state.deleteDialogIsOpen}
+					onCancel={this.toggleDeleteDialog}
+					onConfirmation={this.handleDelete}
+				>
+					Are you sure you want to delete <strong>{this.props.data.name}?</strong>
+					<br />
+					<br />
+					This cannot be undone.
+				</ConfirmationDialog>
 			</form>
 		);
 	},
@@ -391,6 +467,9 @@ const styles = {
 	},
 	deleteButton: {
 		float: 'right',
+	},
+	actionButton: {
+		marginLeft: 10,
 	},
 };
 

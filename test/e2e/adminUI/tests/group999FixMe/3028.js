@@ -1,30 +1,30 @@
 module.exports = {
 	before: function (browser) {
-		browser.app = browser.page.app();
-		browser.signinPage = browser.page.signin();
-		browser.listPage = browser.page.list();
-		browser.itemPage = browser.page.item();
-		browser.initialFormPage = browser.page.initialForm();
+		browser.adminUIApp = browser.page.adminUIApp();
+		browser.adminUISigninScreen = browser.page.adminUISignin();
+		browser.adminUIListScreen = browser.page.adminUIListScreen();
+		browser.adminUIItemScreen = browser.page.adminUIItemScreen();
+		browser.adminUIInitialFormScreen = browser.page.adminUIInitialForm();
 
-		browser.app.navigate();
-		browser.app.waitForElementVisible('@signinScreen');
+		browser.adminUIApp.gotoHomeScreen();
+		browser.adminUIApp.waitForSigninScreen();
 
-		browser.signinPage.signin();
-		browser.app.waitForElementVisible('@homeScreen');
+		browser.adminUISigninScreen.signin();
+		browser.adminUIApp.waitForHomeScreen();
 	},
 	after: function (browser) {
-		browser.app.signout();
+		browser.adminUIApp.signout();
 		browser.end();
 	},
 	'Should be able to create an inline relationship': function(browser) {
 		// Create items
-		browser.app.openMiscList('InlineRelationship');
-		browser.listPage.createFirstItem();
-		browser.app.waitForInitialFormScreen();
-		browser.initialFormPage.save();
+		browser.adminUIApp.openList({section: 'Miscs', list: 'InlineRelationship'});
+		browser.adminUIListScreen.createFirstItem();
+		browser.adminUIApp.waitForInitialFormScreen();
+		browser.adminUIInitialFormScreen.save();
 
-		browser.app.waitForItemScreen();
-		browser.itemPage.assertUI({
+		browser.adminUIApp.waitForItemScreen();
+		browser.adminUIItemScreen.assertUI({
 			listName: 'Relationship',
 			fields: ['fieldA']
 		});

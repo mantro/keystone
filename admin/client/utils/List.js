@@ -93,10 +93,10 @@ const List = function (options) {
  */
 List.prototype.createItem = function (formData, callback) {
 	xhr({
-		url: `${Keystone.adminPath}/api/legacy/${this.path}/create`,
+		url: `${Keystone.adminPath}/api/${this.path}/create`,
 		responseType: 'json',
 		method: 'POST',
-		headers: Keystone.csrf.header,
+		headers: assign({}, Keystone.csrf.header),
 		body: formData,
 	}, (err, resp, data) => {
 		if (err) callback(err);
@@ -121,10 +121,10 @@ List.prototype.createItem = function (formData, callback) {
  */
 List.prototype.updateItem = function (id, formData, callback) {
 	xhr({
-		url: `${Keystone.adminPath}/api/legacy/${this.path}/${id}`,
+		url: `${Keystone.adminPath}/api/${this.path}/${id}`,
 		responseType: 'json',
 		method: 'POST',
-		headers: Keystone.csrf.header,
+		headers: assign({}, Keystone.csrf.header),
 		body: formData,
 	}, (err, resp, data) => {
 		if (err) return callback(err);
@@ -305,11 +305,31 @@ List.prototype.deleteItem = function (itemId, callback) {
  * @param  {Function} callback
  */
 List.prototype.deleteItems = function (itemIds, callback) {
-	const url = Keystone.adminPath + '/api/' + this.path + '/' + itemIds.join(',') + '/delete';
+	const url = Keystone.adminPath + '/api/' + this.path + '/delete';
 	xhr({
 		url: url,
 		method: 'POST',
-		headers: Keystone.csrf.header,
+		headers: assign({}, Keystone.csrf.header),
+		json: {
+			ids: itemIds,
+		},
+	}, (err, resp, body) => {
+		if (err) return callback(err);
+		// Pass the body as result or error, depending on the statusCode
+		if (resp.statusCode === 200) {
+			callback(null, body);
+		} else {
+			callback(body);
+		}
+	});
+};
+
+List.prototype.reorderItems = function (item, oldSortOrder, newSortOrder, pageOptions, callback) {
+	const url = Keystone.adminPath + '/api/' + this.path + '/' + item.id + '/sortOrder/' + oldSortOrder + '/' + newSortOrder + '/' + buildQueryString(pageOptions);
+	xhr({
+		url: url,
+		method: 'POST',
+		headers: assign({}, Keystone.csrf.header),
 	}, (err, resp, body) => {
 		if (err) return callback(err);
 		try {
@@ -327,20 +347,18 @@ List.prototype.deleteItems = function (itemIds, callback) {
 	});
 };
 
-List.prototype.reorderItems = function (item, oldSortOrder, newSortOrder, pageOptions, callback) {
-	const url = Keystone.adminPath + '/api/' + this.path + '/' + item.id + '/sortOrder/' + oldSortOrder + '/' + newSortOrder + '/' + buildQueryString(pageOptions);
+List.prototype.callCustomAction = function (data, itemId, action, callback) {
+	const url = Keystone.adminPath + '/api/' + this.path + '/' + itemId + '/actions/' + action.slug;
+
 	xhr({
 		url: url,
 		method: 'POST',
-		headers: Keystone.csrf.header,
+		headers: assign({ 'Content-Type': 'application/json'}, Keystone.csrf.header),
+		responseType: 'json',
+		body: JSON.stringify(data),
 	}, (err, resp, body) => {
 		if (err) return callback(err);
-		try {
-			body = JSON.parse(body);
-		} catch (e) {
-			console.log('Error parsing results json:', e, body);
-			return callback(e);
-		}
+		
 		// Pass the body as result or error, depending on the statusCode
 		if (resp.statusCode === 200) {
 			callback(null, body);

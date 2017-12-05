@@ -3,7 +3,6 @@ var express = require('express');
 var multer = require('multer');
 
 module.exports = function createDynamicRouter (keystone) {
-
 	// ensure keystone nav has been initialised
 	// TODO: move this elsewhere (on demand generation, or client-side?)
 	if (!keystone.nav) {
@@ -25,6 +24,10 @@ module.exports = function createDynamicRouter (keystone) {
 		req.keystone = keystone;
 		next();
 	});
+
+	if (keystone.get('healthchecks')) {
+		router.use('/server-health', require('./createHealthchecksHandler')(keystone));
+	}
 
 	// Init API request helpers
 	router.use('/api', require('../middleware/apiError'));
@@ -74,10 +77,6 @@ module.exports = function createDynamicRouter (keystone) {
 	// #5: Core Lists API
 	var initList = require('../middleware/initList');
 
-	// Legacy API endpoints
-	router.post('/api/legacy/:list/create', initList, require('../api/list/legacyCreate'));
-	router.post('/api/legacy/:list/:id', initList, require('../api/item/legacyUpdate'));
-
 	// lists
 	router.all('/api/counts', require('../api/counts'));
 	router.get('/api/:list', initList, require('../api/list/get'));
@@ -90,6 +89,7 @@ module.exports = function createDynamicRouter (keystone) {
 	router.post('/api/:list/:id', initList, require('../api/item/update'));
 	router.post('/api/:list/:id/delete', initList, require('../api/list/delete'));
 	router.post('/api/:list/:id/sortOrder/:sortOrder/:newOrder', initList, require('../api/item/sortOrder'));
+	router.post('/api/:list/:id/actions/:customAction', initList, require('../api/item/customAction'));
 
 	// #6: List Routes
 	router.all('/:list/:page([0-9]{1,5})?', IndexRoute);

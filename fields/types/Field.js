@@ -2,7 +2,7 @@ import classnames from 'classnames';
 import evalDependsOn from '../utils/evalDependsOn.js';
 import React from 'react';
 import { findDOMNode } from 'react-dom';
-import { FormField, FormInput, FormNote } from 'elemental';
+import { FormField, FormInput, FormNote } from '../../admin/client/App/elemental';
 import blacklist from 'blacklist';
 import CollapsedFieldLabel from '../components/CollapsedFieldLabel';
 
@@ -51,9 +51,8 @@ var Base = module.exports.Base = {
 		return this.props.collapse && !this.props.value;
 	},
 	shouldRenderField () {
-		if (!this.props.noedit) return true;
-		if (this.props.mode === 'create' && this.props.initial) return true;
-		return false;
+		if (this.props.mode === 'create') return true;
+		return !this.props.noedit;
 	},
 	focus () {
 		if (!this.refs[this.spec.focusTargetRef]) return;
@@ -61,17 +60,22 @@ var Base = module.exports.Base = {
 	},
 	renderNote () {
 		if (!this.props.note) return null;
-		return <FormNote note={this.props.note} />;
+
+		return <FormNote html={this.props.note} />;
 	},
 	renderField () {
-		var props = Object.assign(this.props.inputProps, {
-			autoComplete: 'off',
-			name: this.getInputName(this.props.path),
-			onChange: this.valueChanged,
-			ref: 'focusTarget',
-			value: this.props.value,
-		});
-		return <FormInput {...props} />;
+		const { autoFocus, value, inputProps } = this.props;
+		return (
+			<FormInput {...{
+				...inputProps,
+				autoFocus,
+				autoComplete: 'off',
+				name: this.getInputName(this.props.path),
+				onChange: this.valueChanged,
+				ref: 'focusTarget',
+				value,
+			}} />
+		);
 	},
 	renderValue () {
 		return <FormInput noedit>{this.props.value}</FormInput>;
@@ -83,7 +87,7 @@ var Base = module.exports.Base = {
 			{ 'field-monospace': this.props.monospace }
 		);
 		return (
-			<FormField label={this.props.label} className={wrapperClassName} htmlFor={this.props.path}>
+			<FormField htmlFor={this.props.path} label={this.props.label} className={wrapperClassName} cropLabel>
 				<div className={'FormField__inner field-size-' + this.props.size}>
 					{this.shouldRenderField() ? this.renderField() : this.renderValue()}
 				</div>
@@ -129,6 +133,11 @@ module.exports.create = function (spec) {
 		spec: spec,
 		displayName: spec.displayName,
 		mixins: [Mixins.Collapse],
+		statics: {
+			getDefaultValue: function (field) {
+				return field.defaultValue || '';
+			},
+		},
 		render () {
 			if (!evalDependsOn(this.props.dependsOn, this.props.values)) {
 				return null;
@@ -139,6 +148,10 @@ module.exports.create = function (spec) {
 			return this.renderUI();
 		},
 	};
+
+	if (spec.statics) {
+		Object.assign(field.statics, spec.statics);
+	}
 
 	var excludeBaseMethods = {};
 	if (spec.mixins) {
@@ -152,7 +165,7 @@ module.exports.create = function (spec) {
 	}
 
 	Object.assign(field, blacklist(Base, excludeBaseMethods));
-	Object.assign(field, blacklist(spec, 'mixins'));
+	Object.assign(field, blacklist(spec, 'mixins', 'statics'));
 
 	if (Array.isArray(spec.mixins)) {
 		field.mixins = field.mixins.concat(spec.mixins);

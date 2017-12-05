@@ -1,7 +1,8 @@
 var FieldType = require('../Type');
 var marked = require('marked');
-var util = require('util');
+var sanitizeHtml = require('sanitize-html');
 var TextType = require('../text/TextType');
+var util = require('util');
 var utils = require('keystone-utils');
 
 /**
@@ -14,6 +15,11 @@ function markdown (list, path, options) {
 
 	this.toolbarOptions = options.toolbarOptions || {};
 	this.markedOptions = options.markedOptions || {};
+
+	// See sanitize-html docs for defaults
+	// .. https://www.npmjs.com/package/sanitize-html#what-are-the-default-options
+	this.sanitizeOptions = options.sanitizeOptions || {};
+
 	this.height = options.height || 90;
 	this.wysiwyg = ('wysiwyg' in options) ? options.wysiwyg : true;
 
@@ -37,23 +43,34 @@ markdown.prototype.validateRequiredInput = TextType.prototype.validateRequiredIn
 markdown.prototype.addToSchema = function (schema) {
 
 	var paths = this.paths = {
-		md: this._path.append('.md'),
-		html: this._path.append('.html'),
+		md: this.path + '.md',
+		html: this.path + '.html',
 	};
 
 	var markedOptions = this.markedOptions;
+	var sanitizeOptions = this.sanitizeOptions;
 
 	var setMarkdown = function (value) {
-		if (value === this.get(paths.md)) {
-			return value;
-		}
-		if (typeof value === 'string') {
-			this.set(paths.html, marked(value, markedOptions));
-			return value;
-		} else {
+		// Clear if saving invalid value
+		if (typeof value !== 'string') {
+			this.set(paths.md, undefined);
 			this.set(paths.html, undefined);
+
 			return undefined;
 		}
+
+		var newMd = sanitizeHtml(value, sanitizeOptions);
+		var newHtml = marked(newMd, markedOptions);
+
+		// Return early if no changes to save
+		if (newMd === this.get(paths.md) && newHtml === this.get(paths.html)) {
+			return newMd;
+		}
+
+		this.set(paths.md, newMd);
+		this.set(paths.html, newHtml);
+
+		return newMd;
 	};
 
 	schema.nested[this.path] = true;
@@ -93,6 +110,14 @@ markdown.prototype.addFilterToQuery = function (filter) {
  */
 markdown.prototype.format = function (item) {
 	return item.get(this.paths.html);
+};
+
+/**
+ * Gets the field's data from an Item, as used by the React components
+ */
+markdown.prototype.getData = function (item) {
+	var value = item.get(this.path);
+	return typeof value === 'object' ? value : {};
 };
 
 /**

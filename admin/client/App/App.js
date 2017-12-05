@@ -4,26 +4,54 @@
  */
 
 import React from 'react';
+import { Container } from './elemental';
+import { Link } from 'react-router';
+import { css, StyleSheet } from 'aphrodite/no-important';
 
 import MobileNavigation from './components/Navigation/Mobile';
 import PrimaryNavigation from './components/Navigation/Primary';
 import SecondaryNavigation from './components/Navigation/Secondary';
 import Footer from './components/Footer';
 
+const classes = StyleSheet.create({
+	wrapper: {
+		display: 'flex',
+		flexDirection: 'column',
+		minHeight: '100vh',
+	},
+	body: {
+		flexGrow: 1,
+	},
+});
+
 const App = (props) => {
 	const listsByPath = require('../utils/lists').listsByPath;
+	let children = props.children;
 	// If we're on either a list or an item view
 	let currentList, currentSection;
 	if (props.params.listId) {
 		currentList = listsByPath[props.params.listId];
-		// Get the current section we're in for the navigation
-		currentSection = Keystone.nav.by.list[currentList.key];
+		// If we're on a list path that doesn't exist (e.g. /keystone/gibberishasfw34afsd) this will
+		// be undefined
+		if (!currentList) {
+			children = (
+				<Container>
+					<p>List not found!</p>
+					<Link to={`${Keystone.adminPath}`}>
+						Go back home
+					</Link>
+				</Container>
+			);
+		} else {
+			// Get the current section we're in for the navigation
+			currentSection = Keystone.nav.by.list[currentList.key];
+		}
 	}
 	// Default current section key to dashboard
 	const currentSectionKey = (currentSection && currentSection.key) || 'dashboard';
 	return (
-		<div className="keystone-wrapper">
-			<header className="keystone-header">
+		<div className={css(classes.wrapper)}>
+			<header>
 				<MobileNavigation
 					brand={Keystone.brand}
 					currentListKey={props.params.listId}
@@ -42,12 +70,13 @@ const App = (props) => {
 					<SecondaryNavigation
 						currentListKey={props.params.listId}
 						lists={currentSection.lists}
+						itemId={props.params.itemId}
 					/>
 				) : null}
 			</header>
-			<div className="keystone-body">
-				{props.children}
-			</div>
+			<main className={css(classes.body)}>
+				{children}
+			</main>
 			<Footer
 				appversion={Keystone.appversion}
 				backUrl={Keystone.backUrl}

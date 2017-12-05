@@ -1,9 +1,14 @@
+import _ from 'lodash';
 import async from 'async';
 import React from 'react';
 import { findDOMNode } from 'react-dom';
 import xhr from 'xhr';
 
-import { FormField, FormInput, SegmentedControl } from 'elemental';
+import {
+	FormField,
+	FormInput,
+	SegmentedControl,
+} from '../../../admin/client/App/elemental';
 
 import PopoutList from '../../../admin/client/App/shared/Popout/PopoutList';
 
@@ -87,6 +92,7 @@ var RelationshipFilter = React.createClass({
 	buildFilters () {
 		var filters = {};
 		_.forEach(this.props.field.filters, function (value, key) {
+			if (value[0] === ':') return;
 			filters[key] = value;
 		}, this);
 

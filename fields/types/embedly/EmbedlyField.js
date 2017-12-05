@@ -1,6 +1,6 @@
 import React from 'react';
 import Field from '../Field';
-import { FormField, FormInput } from 'elemental';
+import { FormField, FormInput } from '../../../admin/client/App/elemental';
 import ImageThumbnail from '../../components/ImageThumbnail';
 import NestedFormField from '../../components/NestedFormField';
 
@@ -9,6 +9,7 @@ module.exports = Field.create({
 	displayName: 'EmbedlyField',
 	statics: {
 		type: 'Embedly',
+		getDefaultValue: () => ({}),
 	},
 
 	// always defers to renderValue; there is no form UI for this field

@@ -45,6 +45,8 @@ function finalFieldsSrcStream (sections) {
 }
 
 module.exports = function createStaticRouter (keystone) {
+	var keystoneHash = keystone.createKeystoneHash();
+	var writeToDisk = keystone.get('cache admin bundles');
 	var router = express.Router();
 	if (typeof keystone.middlewareFieldTypes !== 'function') {
 		keystone.middlewareFieldTypes = next => sections => next(sections);
@@ -54,9 +56,24 @@ module.exports = function createStaticRouter (keystone) {
 
 	/* Prepare browserify bundles */
 	var bundles = {
-		fields: browserify(makeFieldTypeSrcStream(keystone.fieldTypes), 'FieldTypes', keystone.fieldsLookupPaths || []),
-		signin: browserify('./Signin/index.js'),
-		admin: browserify('./App/index.js'),
+		fields: browserify({
+			stream: makeFieldTypeSrcStream(keystone.fieldTypes),
+			expose: 'FieldTypes',
+			file: './FieldTypes.js',
+			hash: keystoneHash,
+			writeToDisk: writeToDisk,
+			paths: keystone.fieldsLookupPaths || [],
+		}),
+		signin: browserify({
+			file: './Signin/index.js',
+			hash: keystoneHash,
+			writeToDisk: writeToDisk,
+		}),
+		admin: browserify({
+			file: './App/index.js',
+			hash: keystoneHash,
+			writeToDisk: writeToDisk,
+		}),
 	};
 
 	// prebuild static resources on the next tick in keystone dev mode; this

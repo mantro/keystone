@@ -1,30 +1,26 @@
 import { css, StyleSheet } from 'aphrodite/no-important';
-import React, { cloneElement, Children, Component, PropTypes } from 'react';
-import styles from './styles';
+import React, { cloneElement, Children, PropTypes } from 'react';
+
+// NOTE: only accepts InlineGroupSection as a single child
 
 function InlineGroup ({
+	aphroditeStyles,
 	block,
 	children,
 	className,
-	component,
-	style,
-	...props,
+	component: Component,
+	contiguous,
+	...props
 }) {
-
-	// set the component
-	const Component = component;
-
 	// prepare group className
 	props.className = css(
 		classes.group,
-		className
+		!!block && classes.block,
+		aphroditeStyles
 	);
-
-	// prepare group styles
-	props.style = {
-		display: block ? 'flex' : 'inline-flex',
-		...style,
-	};
+	if (className) {
+		props.className += (' ' + className);
+	}
 
 	// convert children to an array and filter out falsey values
 	const buttons = Children.toArray(children).filter(i => i);
@@ -41,15 +37,15 @@ function InlineGroup ({
 		const isLastChild = !isOnlyChild && idx === count;
 		const isMiddleChild = !isOnlyChild && !isFirstChild && !isLastChild;
 
+		let position;
+		if (isOnlyChild) position = 'only';
+		if (isFirstChild) position = 'first';
+		if (isLastChild) position = 'last';
+		if (isMiddleChild) position = 'middle';
+
 		return cloneElement(c, {
-			padLeft: isLastChild || isMiddleChild,
-			className: [
-				classes.default,
-				isMiddleChild && classes.middle,
-				isFirstChild && classes.first,
-				isLastChild && classes.last,
-				c.props.active && classes.active,
-			],
+			contiguous: contiguous,
+			position,
 		});
 	});
 
@@ -57,6 +53,10 @@ function InlineGroup ({
 };
 
 InlineGroup.propTypes = {
+	aphroditeStyles: PropTypes.shape({
+		_definition: PropTypes.object,
+		_name: PropTypes.string,
+	}),
 	block: PropTypes.bool,
 	component: PropTypes.oneOfType([
 		PropTypes.func,
@@ -68,6 +68,13 @@ InlineGroup.defaultProps = {
 	component: 'div',
 };
 
-const classes = StyleSheet.create(styles);
+const classes = StyleSheet.create({
+	group: {
+		display: 'inline-flex',
+	},
+	block: {
+		display: 'flex',
+	},
+});
 
 module.exports = InlineGroup;

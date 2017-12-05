@@ -1,6 +1,9 @@
 import Field from '../Field';
 import React, { PropTypes } from 'react';
-import { FormField, FormInput, FormRow } from 'elemental';
+import {
+	FormInput,
+	Grid,
+} from '../../../admin/client/App/elemental';
 
 const NAME_SHAPE = {
 	first: PropTypes.string,
@@ -11,6 +14,10 @@ module.exports = Field.create({
 	displayName: 'NameField',
 	statics: {
 		type: 'Name',
+		getDefaultValue: () => ({
+			first: '',
+			last: '',
+		}),
 	},
 	propTypes: {
 		onChange: PropTypes.func.isRequired,
@@ -40,35 +47,35 @@ module.exports = Field.create({
 		const { value = {} } = this.props;
 
 		return (
-			<FormRow>
-				<FormField width="one-half">
+			<Grid.Row small="one-half" gutter={10}>
+				<Grid.Col>
 					<FormInput noedit style={inputStyle}>
 						{value.first}
 					</FormInput>
-				</FormField>
-				<FormField width="one-half">
+				</Grid.Col>
+				<Grid.Col>
 					<FormInput noedit style={inputStyle}>
 						{value.last}
 					</FormInput>
-				</FormField>
-			</FormRow>
+				</Grid.Col>
+			</Grid.Row>
 		);
 	},
 	renderField () {
-		const { value = {}, paths } = this.props;
+		const { value = {}, paths, autoFocus } = this.props;
 		return (
-			<FormRow>
-				<FormField width="one-half">
+			<Grid.Row small="one-half" gutter={10}>
+				<Grid.Col>
 					<FormInput
-						autoFocus
+						autoFocus={autoFocus}
 						autoComplete="off"
 						name={this.getInputName(paths.first)}
 						onChange={this.changeFirst}
 						placeholder="First name"
 						value={value.first}
 					/>
-				</FormField>
-				<FormField width="one-half">
+				</Grid.Col>
+				<Grid.Col>
 					<FormInput
 						autoComplete="off"
 						name={this.getInputName(paths.last)}
@@ -76,8 +83,8 @@ module.exports = Field.create({
 						placeholder="Last name"
 						value={value.last}
 					/>
-				</FormField>
-			</FormRow>
+				</Grid.Col>
+			</Grid.Row>
 		);
 	},
 });

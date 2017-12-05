@@ -4,12 +4,12 @@
  */
 
 import React from 'react';
-import { findDOMNode } from 'react-dom';
 import assign from 'object-assign';
+import vkey from 'vkey';
 import AlertMessages from './AlertMessages';
 import { Fields } from 'FieldTypes';
 import InvalidFieldType from './InvalidFieldType';
-import { Button, Form, Modal } from 'elemental';
+import { Button, Form, Modal } from '../elemental';
 
 const CreateForm = React.createClass({
 	displayName: 'CreateForm',
@@ -32,9 +32,8 @@ const CreateForm = React.createClass({
 		var values = {};
 		Object.keys(this.props.list.fields).forEach(key => {
 			var field = this.props.list.fields[key];
-			if (field.defaultValue) {
-				values[field.path] = field.defaultValue;
-			}
+			var FieldComponent = Fields[field.type];
+			values[field.path] = FieldComponent.getDefaultValue(field);
 		});
 		return {
 			values: values,
@@ -42,21 +41,14 @@ const CreateForm = React.createClass({
 		};
 	},
 	componentDidMount () {
-		this.focusTarget();
+		document.body.addEventListener('keyup', this.handleKeyPress, false);
 	},
-	componentDidUpdate (prevProps) {
-		// If we just opened the modal an animation is playing
-		if (this.props.isOpen !== prevProps.isOpen) {
-			// focus the focusTarget after the animation has started
-			setTimeout(() => {
-				this.focusTarget();
-			}, 0);
-		}
+	componentWillUnmount () {
+		document.body.removeEventListener('keyup', this.handleKeyPress, false);
 	},
-	// Focus the first input field
-	focusTarget () {
-		if (this.refs.focusTarget) {
-			findDOMNode(this.refs.focusTarget).focus();
+	handleKeyPress (evt) {
+		if (vkey[evt.keyCode] === '<escape>') {
+			this.props.onCancel();
 		}
 	},
 	// Handle input change events
@@ -123,17 +115,17 @@ const CreateForm = React.createClass({
 		var form = [];
 		var list = this.props.list;
 		var nameField = this.props.list.nameField;
-		var focusRef;
+		var focusWasSet;
 
 		// If the name field is an initial one, we need to render a proper
 		// input for it
 		if (list.nameIsInitial) {
 			var nameFieldProps = this.getFieldProps(nameField);
-			nameFieldProps.ref = focusRef = 'focusTarget';
+			nameFieldProps.autoFocus = focusWasSet = true;
 			if (nameField.type === 'text') {
 				nameFieldProps.className = 'item-name-field';
 				nameFieldProps.placeholder = nameField.label;
-				nameFieldProps.label = false;
+				nameFieldProps.label = '';
 			}
 			form.push(React.createElement(Fields[nameField.type], nameFieldProps));
 		}
@@ -152,21 +144,16 @@ const CreateForm = React.createClass({
 			// If there was no focusRef set previously, set the current field to
 			// be the one to be focussed. Generally the first input field, if
 			// there's an initial name field that takes precedence.
-			if (!focusRef) {
-				fieldProps.ref = focusRef = 'focusTarget';
+			if (!focusWasSet) {
+				fieldProps.autoFocus = focusWasSet = true;
 			}
 			form.push(React.createElement(Fields[field.type], fieldProps));
 		});
 
 		return (
-			<Form
-				type="horizontal"
-				onSubmit={this.submitForm}
-				className="create-form"
-			>
+			<Form layout="horizontal" onSubmit={this.submitForm}>
 				<Modal.Header
 					text={'Create a new ' + list.singular}
-					onClose={this.props.onCancel}
 					showCloseButton
 				/>
 				<Modal.Body>
@@ -174,9 +161,13 @@ const CreateForm = React.createClass({
 					{form}
 				</Modal.Body>
 				<Modal.Footer>
-					<Button type="success" submit>Create</Button>
+					<Button color="success" type="submit" data-button-type="submit">
+						Create
+					</Button>
 					<Button
-						type="link-cancel"
+						variant="link"
+						color="cancel"
+						data-button-type="cancel"
 						onClick={this.props.onCancel}
 					>
 						Cancel
@@ -187,13 +178,13 @@ const CreateForm = React.createClass({
 	},
 	render () {
 		return (
-			<Modal
+			<Modal.Dialog
 				isOpen={this.props.isOpen}
-				onCancel={this.props.onCancel}
+				onClose={this.props.onCancel}
 				backdropClosesModal
 			>
 				{this.renderForm()}
-			</Modal>
+			</Modal.Dialog>
 		);
 	},
 });

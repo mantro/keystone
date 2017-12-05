@@ -1,8 +1,13 @@
+/*
+TODO: this file has been left as a reference for the new File type field.
+Some features here, including size formatting and icons, may be ported across.
+*/
+
 import _ from 'lodash';
 import bytes from 'bytes';
 import Field from '../Field';
 import React from 'react';
-import { Button, FormField, FormInput, FormNote } from 'elemental';
+import { Button, FormField, FormInput, FormNote } from '../../../admin/client/App/elemental';
 
 const ICON_EXTS = [
 	'aac', 'ai', 'aiff', 'avi', 'bmp', 'c', 'cpp', 'css', 'dat', 'dmg', 'doc', 'dotx', 'dwg', 'dxf', 'eps', 'exe', 'flv', 'gif', 'h',
@@ -189,7 +194,7 @@ module.exports = Field.create({
 
 	renderNote: function () {
 		if (!this.props.note) return null;
-		return <FormNote note={this.props.note} />;
+		return <FormNote html={this.props.note} />;
 	},
 
 	renderUI () {

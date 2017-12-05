@@ -1,22 +1,12 @@
 /**
 Deprecated.
 
-This FieldType will be removed shortly in favour of the new generic File type,
-in conjunction with the FS storage adapter.
+Using this field will now throw an error, and this code will be removed soon.
+
+See https://github.com/keystonejs/keystone/wiki/File-Fields-Upgrade-Guide
 */
 
-var _ = require('lodash');
-var async = require('async');
-var FieldType = require('../Type');
-var fs = require('fs-extra');
-var grappling = require('grappling-hook');
-var keystone = require('../../../');
-var moment = require('moment');
-var path = require('path');
-var util = require('util');
-var utils = require('keystone-utils');
-
-var loggedWarning = false;
+/* eslint-disable */
 
 /**
  * localfiles FieldType Constructor
@@ -25,12 +15,10 @@ var loggedWarning = false;
  */
 function localfiles (list, path, options) {
 
-	if (!loggedWarning) {
-		loggedWarning = true;
-		console.warn('The LocalFiles field type has been deprecated and will be removed '
-			+ 'very soon. Please see https://github.com/keystonejs/keystone/issues/3228');
-	}
+	throw new Error('The LocalFiles field type has been removed. Please use File instead.'
+		+ '\n\nSee https://github.com/keystonejs/keystone/wiki/File-Fields-Upgrade-Guide\n');
 
+	/*
 	grappling.mixin(this).allowHooks('move');
 	this._underscoreMethods = ['format', 'uploadFiles'];
 	this._fixedSize = 'full';
@@ -64,9 +52,10 @@ function localfiles (list, path, options) {
 	if (options.post && options.post.move) {
 		this.post('move', options.post.move);
 	}
+	*/
 }
 localfiles.properName = 'LocalFiles';
-util.inherits(localfiles, FieldType);
+// util.inherits(localfiles, FieldType);
 
 /**
  * Registers the field on the List's Mongoose Schema.
@@ -78,16 +67,16 @@ localfiles.prototype.addToSchema = function (schema) {
 
 	var paths = this.paths = {
 		// fields
-		filename: this._path.append('.filename'),
-		path: this._path.append('.path'),
-		originalname: this._path.append('.originalname'),
-		size: this._path.append('.size'),
-		filetype: this._path.append('.filetype'),
+		filename: this.path + '.filename',
+		path: this.path + '.path',
+		originalname: this.path + '.originalname',
+		size: this.path + '.size',
+		filetype: this.path + '.filetype',
 		// virtuals
-		exists: this._path.append('.exists'),
-		upload: this._path.append('_upload'),
-		action: this._path.append('_action'),
-		order: this._path.append('_order'),
+		exists: this.path + '.exists',
+		upload: this.path + '_upload',
+		action: this.path + '_action',
+		order: this.path + '_order',
 	};
 
 	var schemaPaths = new mongoose.Schema({
@@ -373,13 +362,6 @@ localfiles.prototype.getRequestHandler = function (item, req, paths, callback) {
 		return callback();
 	};
 
-};
-
-/**
- * Immediately handles a standard form submission for the field (see `getRequestHandler()`)
- */
-localfiles.prototype.handleRequest = function (item, req, paths, callback) {
-	this.getRequestHandler(item, req, paths, callback)();
 };
 
 

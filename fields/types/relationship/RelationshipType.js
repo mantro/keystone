@@ -77,13 +77,25 @@ relationship.prototype.addToSchema = function (schema) {
 		unique: (this.options.unique ? true : false),
 	};
 	this.paths = {
-		refList: this.options.refListPath || this._path.append('RefList'),
+		refList: this.options.refListPath || this.path + 'RefList',
 	};
 	schema.path(this.path, this.many ? [def] : def);
 	schema.virtual(this.paths.refList).get(function () {
 		return keystone.list(field.options.ref);
 	});
 	this.bindUnderscoreMethods();
+};
+
+/**
+ * Gets the field's data from an Item, as used by the React components
+ */
+relationship.prototype.getData = function (item) {
+	var value = item.get(this.path);
+	if (this.many) {
+		return Array.isArray(value) ? value : [];
+	} else {
+		return value;
+	}
 };
 
 /**

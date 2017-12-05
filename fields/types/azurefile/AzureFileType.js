@@ -1,18 +1,12 @@
 /**
 Deprecated.
 
-This FieldType will be removed shortly in favour of the new generic File type,
-in conjunction with the Azure storage adapter.
+Using this field will now throw an error, and this code will be removed soon.
+
+See https://github.com/keystonejs/keystone/wiki/File-Fields-Upgrade-Guide
 */
 
-var _ = require('lodash');
-var FieldType = require('../Type');
-var grappling = require('grappling-hook');
-var keystone = require('../../../');
-var util = require('util');
-var utils = require('keystone-utils');
-
-var loggedWarning = false;
+/* eslint-disable */
 
 /**
  * AzureFile FieldType Constructor
@@ -21,11 +15,10 @@ var loggedWarning = false;
  */
 function azurefile (list, path, options) {
 
-	if (!loggedWarning) {
-		loggedWarning = true;
-		console.warn('The AzureFile field type has been deprecated and will be removed '
-			+ 'very soon. Please see https://github.com/keystonejs/keystone/issues/3228');
-	}
+	throw new Error('The AzureFile field type has been removed. Please use File instead.'
+		+ '\n\nSee https://github.com/keystonejs/keystone/wiki/File-Fields-Upgrade-Guide\n');
+
+	/*
 
 	grappling.mixin(this).allowHooks('pre:upload');
 
@@ -64,9 +57,11 @@ function azurefile (list, path, options) {
 		this.pre('upload', options.pre.upload);
 	}
 
+	*/
+
 }
 azurefile.properName = 'AzureFile';
-util.inherits(azurefile, FieldType);
+// util.inherits(azurefile, FieldType);
 
 /**
  * Exposes the custom or keystone s3 config settings
@@ -88,17 +83,17 @@ azurefile.prototype.addToSchema = function (schema) {
 
 	var paths = this.paths = {
 		// fields
-		filename: this._path.append('.filename'),
-		path: this._path.append('.path'),
-		size: this._path.append('.size'),
-		filetype: this._path.append('.filetype'),
-		url: this._path.append('.url'),
-		etag: this._path.append('.etag'),
-		container: this._path.append('.container'),
+		filename: this.path + '.filename',
+		path: this.path + '.path',
+		size: this.path + '.size',
+		filetype: this.path + '.filetype',
+		url: this.path + '.url',
+		etag: this.path + '.etag',
+		container: this.path + '.container',
 		// virtuals
-		exists: this._path.append('.exists'),
-		upload: this._path.append('_upload'),
-		action: this._path.append('_action'),
+		exists: this.path + '.exists',
+		upload: this.path + '_upload',
+		action: this.path + '_action',
 	};
 
 	var schemaPaths = this._path.addTo({}, {
@@ -297,13 +292,6 @@ azurefile.prototype.getRequestHandler = function (item, req, paths, callback) {
 
 	};
 
-};
-
-/**
- * Immediately handles a standard form submission for the field (see `getRequestHandler()`)
- */
-azurefile.prototype.handleRequest = function (item, req, paths, callback) {
-	this.getRequestHandler(item, req, paths, callback)();
 };
 
 /* Export Field Type */

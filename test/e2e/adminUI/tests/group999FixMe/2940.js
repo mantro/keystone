@@ -1,86 +1,86 @@
 module.exports = {
 	before: function (browser) {
-		browser.app = browser.page.app();
-		browser.signinPage = browser.page.signin();
-		browser.listPage = browser.page.list();
-		browser.itemPage = browser.page.item();
-		browser.initialFormPage = browser.page.initialForm();
+		browser.adminUIApp = browser.page.adminUIApp();
+		browser.adminUISigninScreen = browser.page.adminUISignin();
+		browser.adminUIListScreen = browser.page.adminUIListScreen();
+		browser.adminUIItemScreen = browser.page.adminUIItemScreen();
+		browser.adminUIInitialFormScreen = browser.page.adminUIInitialForm();
 
-		browser.app.navigate();
-		browser.app.waitForSigninScreen();
+		browser.adminUIApp.gotoHomeScreen();
+		browser.adminUIApp.waitForSigninScreen();
 
-		browser.signinPage.signin();
-		browser.app.waitForElementVisible('@homeScreen');
+		browser.adminUISigninScreen.signin();
+		browser.adminUIApp.waitForHomeScreen();
 	},
 	after: function (browser) {
-		browser.app.signout();
+		browser.adminUIApp.signout();
 		browser.end();
 	},
 	'List items with relationships to them should allow navigating to the source relationships': function(browser) {
-		browser.app.openMiscList('TargetRelationship');
-		browser.listPage.createFirstItem();
-		browser.app.waitForInitialFormScreen();
+		browser.adminUIApp.openList({section: 'Miscs', list: 'TargetRelationship'});
+		browser.adminUIListScreen.createFirstItem();
+		browser.adminUIApp.waitForInitialFormScreen();
 
-		browser.initialFormPage.assertUI({
+		browser.adminUIInitialFormScreen.assertUI({
 			listName: 'TargetRelationship',
 			fields: ['name'],
 		});
 
-		browser.initialFormPage.fillInputs({
+		browser.adminUIInitialFormScreen.fillFieldInputs({
 			listName: 'TargetRelationship',
 			fields: {
 				'name': {value: 'Test Target 1'},
 			},
 		});
-		browser.initialFormPage.save();
-		browser.app.waitForItemScreen();
+		browser.adminUIInitialFormScreen.save();
+		browser.adminUIApp.waitForItemScreen();
 
-		browser.app.openMiscList('SourceRelationship');
-		browser.listPage.createFirstItem();
-		browser.app.waitForInitialFormScreen();
+		browser.adminUIApp.openList({section: 'Miscs', list: 'SourceRelationship'});
+		browser.adminUIListScreen.createFirstItem();
+		browser.adminUIApp.waitForInitialFormScreen();
 
-		browser.initialFormPage.assertUI({
+		browser.adminUIInitialFormScreen.assertUI({
 			listName: 'SourceRelationship',
 			fields: ['name'],
 		});
 
-		browser.initialFormPage.fillInputs({
+		browser.adminUIInitialFormScreen.fillFieldInputs({
 			listName: 'SourceRelationship',
 			fields: {
 				'name': {value: 'Test Source 1'},
 			},
 		});
-		browser.initialFormPage.save();
-		browser.app.waitForItemScreen();
+		browser.adminUIInitialFormScreen.save();
+		browser.adminUIApp.waitForItemScreen();
 
-		browser.itemPage.fillInputs({
+		browser.adminUIItemScreen.fillFieldInputs({
 			listName: 'SourceRelationship',
 			fields: {
 				'fieldA': {value: 'Test Target 1'},
 				//'fieldA': {option: 'option1'},
 			},
 		});
-		browser.itemPage.save();
-		browser.app.waitForItemScreen();
-		browser.itemPage.assertFlashMessage('Your changes have been saved successfully');
+		browser.adminUIItemScreen.save();
+		browser.adminUIApp.waitForItemScreen();
+		browser.adminUIItemScreen.assertFlashMessage('Your changes have been saved successfully');
 
-		browser.app.openMiscList('TargetRelationship');
-		browser.listPage.navigateToFirstItem();
+		browser.adminUIApp.openList({section: 'Miscs', list: 'TargetRelationship'});
+		browser.adminUIListScreen.navigateToFirstItem();
 
-		browser.app.waitForItemScreen();
+		browser.adminUIApp.waitForItemScreen();
 
-		browser.itemPage.assertInputs({
+		browser.adminUIItemScreen.assertFieldInputs({
 			listName: 'TargetRelationship',
 			fields: {
 				'name': {value: 'Test Target 1'},
 			},
 		});
 
-		browser.itemPage.navitageToFirstRelationship();
+		browser.adminUIItemScreen.navitageToFirstRelationship();
 
-		browser.app.waitForItemScreen();
+		browser.adminUIApp.waitForItemScreen();
 
-		browser.itemPage.assertInputs({
+		browser.adminUIItemScreen.assertFieldInputs({
 			listName: 'SourceRelationship',
 			fields: {
 				'name': {value: 'Select Field Test 1'},

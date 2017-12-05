@@ -1,19 +1,14 @@
 module.exports = {
 	before: function (browser) {
-		browser.app = browser.page.app();
-		browser.signinPage = browser.page.signin();
+		browser.adminUIApp = browser.page.adminUIApp();
+		browser.adminUISigninScreen = browser.page.adminUISignin();
 
-		browser.app.navigate();
-		browser.app.waitForElementVisible('@signinScreen');
+		browser.adminUIApp.gotoSigninScreen();
 	},
 	after: function (browser) {
 		browser.end();
 	},
-	'AdminUI should have a signin page': function (browser) {
-		browser.app
-			.expect.element('@signinScreen').to.be.visible;
-	},
 	'Signin page should show correctly': function (browser) {
-		browser.signinPage.assertUI();
+		browser.adminUISigninScreen.assertUI();
 	},
 };
