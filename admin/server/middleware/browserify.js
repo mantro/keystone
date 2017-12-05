@@ -9,6 +9,7 @@ var basedir = path.resolve(__dirname + '/../../client/');
 var devMode = process.env.KEYSTONE_DEV === 'true';
 var devWriteBundles = process.env.KEYSTONE_WRITE_BUNDLES === 'true';
 var devWriteDisc = process.env.KEYSTONE_WRITE_DISC === 'true';
+var babelrc = fs.readJsonSync(path.join(__dirname, '../../../.babelrc'), { throws: false }) || { };
 
 function ts () {
 	return chalk.gray(moment().format('YYYY-MM-DD HH:MM:SS '));
@@ -97,7 +98,7 @@ module.exports = function (opts) {
 			b = browserify(file, opts);
 		}
 
-		b.transform(babelify);
+		b.transform(babelify, babelrc);
 		b.exclude('FieldTypes');
 		packages.forEach(function (i) {
 			b.exclude(i);
