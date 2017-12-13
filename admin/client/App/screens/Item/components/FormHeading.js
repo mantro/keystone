@@ -10,6 +10,13 @@ module.exports = React.createClass({
 		if (!evalDependsOn(this.props.options.dependsOn, this.props.options.values)) {
 			return null;
 		}
-		return <h3 className="form-heading">{this.props.content}</h3>;
+		
+		let Heading = 'h3';
+
+		if (this.props.options.subHeading) {
+			Heading = 'h4';
+		}
+
+		return <Heading className="form-heading">{this.props.content}</Heading>;
 	},
 });
