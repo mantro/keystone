@@ -17,6 +17,10 @@ module.exports = React.createClass({
 			Heading = 'h4';
 		}
 
-		return <Heading className="form-heading">{this.props.content}</Heading>;
+		if (this.props.options.isLabel) {
+			Heading = 'div';
+		}
+
+		return <Heading className={this.props.options.isLabel ? '' : 'form-heading'}>{this.props.content}</Heading>;
 	},
 });

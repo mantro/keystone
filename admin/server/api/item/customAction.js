@@ -4,15 +4,26 @@ var	evalDependsOn = require('../../../../fields/utils/evalDependsOn');
 
 function fireAction (item, customAction, req, res, cb) {
 	req.item = item;
+
+	const handleError = (err) => {
+		if (!err.message) {
+			err.message = 'There was a problem performing the action "' + customAction.name + '"';
+		}
+		res.status(500).json({ err: err.message, id: req.params.id, customAction: customAction.slug });
+	};
+
 	try {
 		if (!evalDependsOn(customAction.dependsOn, item)) {
 			throw new Error();
 		}
 
-		customAction.action.call(req.list, req, res, function (message) {
+		customAction.action.call(req.list, req, res, function (err, message) {
+			if (err) return handleError(err);
+
 			if (!message) {
 				message = '"' + customAction.name + '" was successful.';
 			}
+
 			if (customAction.save.post) {
 				req.item.save(function () {
 					res.status(200).json({ message: message });
@@ -22,10 +33,7 @@ function fireAction (item, customAction, req, res, cb) {
 			}
 		});
 	} catch (e) {
-		if (!e.message) {
-			e.message = 'There was a problem performing the action "' + customAction.name + '"';
-		}
-		res.status(500).json({ err: e.message, id: req.params.id, customAction: customAction.slug });
+		handleError(e);
 	}
 }
 
