@@ -98,7 +98,7 @@ module.exports = function (opts) {
 			b = browserify(file, opts);
 		}
 
-		b.transform(babelify, babelrc);
+		b.transform(babelify, { ...babelrc, global: true });
 		b.exclude('FieldTypes');
 		packages.forEach(function (i) {
 			b.exclude(i);
