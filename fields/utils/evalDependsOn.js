@@ -25,6 +25,6 @@ module.exports = function evalDependsOn (dependsOn, values) {
 
 	// Checks if the current field should be displayed, based on the values of
 	// other fields and the dependsOn configuration of this field
-	var Match = new ExMatch(dependsOn, values, false);
+	var Match = new ExMatch(dependsOn, values, true);
 	return Match.match();
 };

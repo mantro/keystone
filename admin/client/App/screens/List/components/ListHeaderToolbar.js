@@ -94,7 +94,7 @@ function ListHeaderToolbar ({
 							availableFilters={filtersAvailable}
 						/>
 					</Section>
-					<Section aphroditeStyles={classes.columns}>
+					{/* <Section aphroditeStyles={classes.columns}>
 						<ListColumnsForm
 							availableColumns={columnsAvailable}
 							activeColumns={columnsActive}
@@ -107,7 +107,7 @@ function ListHeaderToolbar ({
 							dispatch={dispatch}
 							list={list}
 						/>
-					</Section>
+					</Section> */}
 					<Section aphroditeStyles={classes.expand}>
 						<ButtonDivider>
 							<GlyphButton
