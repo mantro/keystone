@@ -214,6 +214,29 @@ List.prototype.expandSort = function (input) {
 	return sort;
 };
 
+List.prototype.expandFilters = function (input) {
+	if (input === '__default__') input = [];
+	
+	return input.map((filter) => {
+		const path = filter.path;
+		const value = Object.assign({}, filter);
+		delete value.path;
+		return createFilterObject(path, value, this.fields);
+	}).filter(filter => filter);
+};
+
+function createFilterObject (path, value, currentListFields) {
+	const field = currentListFields[path];
+	if (!field) {
+		console.warn('Invalid Filter path specified:', path);
+		return;
+	}
+	return {
+		field,
+		value,
+	};
+}
+
 /**
  * Load a specific item via the API
  *

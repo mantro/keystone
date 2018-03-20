@@ -9,6 +9,7 @@ import {
 	SET_ACTIVE_SORT,
 	SET_ACTIVE_COLUMNS,
 	SET_ACTIVE_LIST,
+	SET_ACTIVE_FILTERS,
 	SET_FILTERS,
 } from '../constants';
 
@@ -36,6 +37,7 @@ function active (state = initialState, action) {
 				filters: [],
 				search: '',
 				sort: action.list.expandSort(action.list.defaultSort),
+				filters: action.list.expandFilters(action.list.defaultFilters),
 			});
 		case SET_ACTIVE_SEARCH:
 			return assign({}, state, {
@@ -48,6 +50,10 @@ function active (state = initialState, action) {
 		case SET_ACTIVE_COLUMNS:
 			return assign({}, state, {
 				columns: action.columns,
+			});
+		case SET_ACTIVE_FILTERS:
+			return assign({}, state, {
+				filters: actions.filters,
 			});
 		case ADD_FILTER:
 			return assign({}, state, {

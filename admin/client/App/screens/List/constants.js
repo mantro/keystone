@@ -11,6 +11,7 @@ export const SET_ACTIVE_SEARCH = 'app/List/SET_ACTIVE_SEARCH';
 export const SET_ACTIVE_SORT = 'app/List/SET_ACTIVE_SORT';
 export const SET_ACTIVE_COLUMNS = 'app/List/SET_ACTIVE_COLUMNS';
 export const SET_ACTIVE_LIST = 'app/List/SET_ACTIVE_LIST';
+export const SET_ACTIVE_FILTERS = 'app/List/SET_ACTIVE_FILTERS';
 // Filtering
 export const ADD_FILTER = 'app/List/ADD_FILTER';
 export const CLEAR_FILTER = 'app/List/CLEAR_FILTER';
