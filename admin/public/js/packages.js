@@ -4198,10 +4198,10 @@ function r(e){"undefined"!=typeof console&&"function"==typeof console.error&&con
 try{throw new Error(e)}catch(e){}}n.__esModule=!0,n.default=r},{}],700:[function(e,t,n){"use strict"
 t.exports=function(e){return encodeURIComponent(e).replace(/[!'()*]/g,function(e){return"%"+e.charCodeAt(0).toString(16).toUpperCase()})}},{}],701:[function(e,t,n){t.exports=e("./lib/index")},{"./lib/index":702}],702:[function(e,t,n){(function(r){"use strict"
 function o(e){return e&&e.__esModule?e:{default:e}}Object.defineProperty(n,"__esModule",{value:!0})
-var a,i=e("./ponyfill"),s=o(i)
+var a,i=e("./ponyfill.js"),s=o(i)
 a="undefined"!=typeof self?self:"undefined"!=typeof window?window:"undefined"!=typeof r?r:"undefined"!=typeof t?t:Function("return this")()
 var u=(0,s.default)(a)
-n.default=u}).call(this,"undefined"!=typeof global?global:"undefined"!=typeof self?self:"undefined"!=typeof window?window:{})},{"./ponyfill":703}],703:[function(e,t,n){"use strict"
+n.default=u}).call(this,"undefined"!=typeof global?global:"undefined"!=typeof self?self:"undefined"!=typeof window?window:{})},{"./ponyfill.js":703}],703:[function(e,t,n){"use strict"
 function r(e){var t,n=e.Symbol
 return"function"==typeof n?n.observable?t=n.observable:(t=n("observable"),n.observable=t):t="@@observable",t}Object.defineProperty(n,"__esModule",{value:!0}),n.default=r},{}],704:[function(e,t,n){function r(e){return e.replace(/^\s*|\s*$/g,"")}n=t.exports=r,n.left=function(e){return e.replace(/^\s*/,"")},n.right=function(e){return e.replace(/\s*$/,"")}},{}],705:[function(e,t,n){"use strict"
 var r=function(){}

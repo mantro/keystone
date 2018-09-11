@@ -285,6 +285,28 @@ var EditForm = React.createClass({
 			}
 		}, this);
 	},
+	renderFormCustomActions(){
+		return this.props.list.customActions
+        .filter(customAction => customAction.position === "form")
+        .map(customAction => (
+            <div className="EditForm__custom">
+                <h3 className="form-heading">{customAction.name}</h3>
+                <h4 className="form-description">{customAction.description}</h4>
+                <Button
+                    color="primary"
+                    onClick={this.handleCustomAction.bind(this, customAction)}
+                    key={customAction.slug}
+                    data-button={customAction.slug}
+                    disabled={this.state.loading
+                        || this.state.actionsDisabled
+                        //  || !evalDependsOn(customAction.dependsOn, this.state.values)
+                    }
+                >
+                    {customAction.buttonText}
+                </Button>
+            </div>
+        ));
+	},
 	renderFooterBar () {
 		if (this.props.list.noedit && this.props.list.nodelete) {
 			return null;
@@ -310,7 +332,9 @@ var EditForm = React.createClass({
 							{loadingButtonText}
 						</LoadingButton>
 					)}
-					{this.props.list.customActions.map(customAction => (
+					{this.props.list.customActions
+					.filter(customAction => customAction.position === 'footer')
+					.map(customAction => (
 						<GlyphButton
 							position={customAction.glyph ? customAction.glyphPosition || 'left' : 'none'}
 							glyph={customAction.glyph}
@@ -424,6 +448,7 @@ var EditForm = React.createClass({
 							{this.renderNameField()}
 							{this.renderKeyOrId()}
 							{this.renderFormElements()}
+							{this.renderFormCustomActions()}
 							{this.renderTrackingMeta()}
 						</Form>
 					</Grid.Col>
