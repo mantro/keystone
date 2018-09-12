@@ -7,7 +7,7 @@ import React, { PropTypes } from 'react';
 import classnames from 'classnames';
 import { Link } from 'react-router';
 
-const PrimaryNavItem = ({ children, className, href, label, title, to, active }) => {
+const PrimaryNavItem = ({ children, className, href, label, title, to, active, target }) => {
 	const itemClassName = classnames('primary-navbar__item', className);
 
 	const Button = to ? (
@@ -29,6 +29,7 @@ const PrimaryNavItem = ({ children, className, href, label, title, to, active })
 			key={title}
 			tabIndex="-1"
 			title={title}
+			target={target}
 		>
 			{children}
 		</a>
