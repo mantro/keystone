@@ -7,6 +7,7 @@ import {
 	FormInput,
 	Grid,
 	ResponsiveText,
+	Modal
 } from '../../../elemental';
 
 // import { css, StyleSheet } from 'aphrodite/no-important';
@@ -62,6 +63,8 @@ var EditForm = React.createClass({
 			loading: false,
 			lastValues: null, // used for resetting
 			focusFirstField: !this.props.list.nameField && !this.props.list.nameFieldIsFormHeader,
+			dialogs: {},
+			successDialog: false,
 		};
 	},
 	componentDidMount () {
@@ -76,6 +79,19 @@ var EditForm = React.createClass({
 				values: assign({}, nextProps.data.fields)
 			});
 		}
+	},
+	toggleModal (id, open){
+		this.setState({
+			dialogs: {
+				...this.state.dialogs,
+				[id]: open,
+			}
+		})
+	},
+	toggleSuccessModal (id, open){
+		this.setState({
+			successDialog: open
+		})
 	},
 	getFieldProps (field) {
 		const props = assign({}, field);
@@ -140,10 +156,15 @@ var EditForm = React.createClass({
 			} else {
 				this.setState({
 					alerts: { success: { success: body.message } },
-					actionsDisabled: false
+					actionsDisabled: customAction.redirect ? true : false,
+					successDialog: customAction.redirect ? body.message : false,
+					loading: customAction.redirect ? true : this.state.loading,
+					values: customAction.redirect ? {} : this.state.values,
 				});
 			}
-			this.props.dispatch(loadItemData());
+			if(!customAction.redirect){
+				this.props.dispatch(loadItemData());
+			}
 		});
 	},
 	removeConfirmationDialog () {
@@ -287,25 +308,91 @@ var EditForm = React.createClass({
 	},
 	renderFormCustomActions(){
 		return this.props.list.customActions
-        .filter(customAction => customAction.position === "form")
-        .map(customAction => (
-            <div className="EditForm__custom">
-                <h3 className="form-heading">{customAction.name}</h3>
-                <h4 className="form-description">{customAction.description}</h4>
-                <Button
-                    color="primary"
-                    onClick={this.handleCustomAction.bind(this, customAction)}
-                    key={customAction.slug}
-                    data-button={customAction.slug}
-                    disabled={this.state.loading
-                        || this.state.actionsDisabled
-                        //  || !evalDependsOn(customAction.dependsOn, this.state.values)
-                    }
-                >
-                    {customAction.buttonText}
-                </Button>
-            </div>
-        ));
+		.filter(customAction => customAction.position === "form")
+		.map(customAction => (
+			<div className="EditForm__custom">
+				<h3 className="form-heading">{customAction.name}</h3>
+				<h4 className="form-description">{customAction.description}</h4>
+				<Button
+					color="primary"
+					// onClick={this.handleCustomAction.bind(this, customAction)}
+					onClick={() => {
+						this.toggleModal(customAction.slug, true);
+					}}
+					key={customAction.slug}
+					data-button={customAction.slug}
+					disabled={this.state.loading
+						|| this.state.actionsDisabled
+						//  || !evalDependsOn(customAction.dependsOn, this.state.values)
+					}
+				>
+					{customAction.buttonText}
+				</Button>
+				<Modal.Dialog
+					isOpen={this.state.dialogs[customAction.slug]}
+					onClose={() => {
+						this.toggleModal(customAction.slug, false);
+					}}
+					backdropClosesModal
+				>
+					<div style={styles.modalContent}>
+						<h3 className="form-heading">{customAction.name}</h3>
+						<h4 className="form-description">{customAction.description}</h4>
+						<h3 className="form-heading">Are you sure?</h3>
+						<div>
+							<Button
+								color="danger"
+								onClick={() => {
+									this.toggleModal(customAction.slug, false);
+									this.handleCustomAction.bind(this, customAction)();
+								}}
+								key={customAction.slug}
+								data-button={customAction.slug}
+								disabled={this.state.loading
+									|| this.state.actionsDisabled
+									//  || !evalDependsOn(customAction.dependsOn, this.state.values)
+								}
+							>
+								{customAction.buttonText}
+							</Button>
+							<Button
+								variant="link"
+								onClick={() => {
+									this.toggleModal(customAction.slug, false);
+								}}
+							>
+								Cancel
+				 </Button>
+						</div>
+					</div>
+				</Modal.Dialog>
+				<Modal.Dialog
+					isOpen={this.state.successDialog}
+					onClose={() => {
+						this.toggleSuccessModal(false);
+					}}
+					backdropClosesModal
+				>
+					<div style={styles.modalContent}>
+						<h3 className="form-heading">{customAction.name}</h3>
+						<h4 className="form-description">{this.state.successDialog}</h4>
+						<div>
+							<Button
+								color="primary"
+								onClick={() => {
+									this.toggleSuccessModal(false);
+									this.props.router.push(customAction.redirect);
+								}}
+								key={customAction.slug}
+								data-button={customAction.slug}
+							>
+								OK
+							</Button>
+						</div>
+					</div>
+				</Modal.Dialog>
+			</div>
+		));
 	},
 	renderFooterBar () {
 		if (this.props.list.noedit && this.props.list.nodelete) {
@@ -496,6 +583,13 @@ const styles = {
 	actionButton: {
 		marginLeft: 10,
 	},
+	modalContent:{
+		display: 'flex',
+		flexDirection: 'column',
+		alignItems: 'center',
+		justifyContent: 'center',
+		padding: '20px'
+	}
 };
 
 module.exports = EditForm;
